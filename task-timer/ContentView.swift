@@ -156,15 +156,16 @@ struct ContentView: View {
     
     // MARK: - Task List Section
     private var taskListSection: some View {
-        ScrollView {
-            LazyVStack(spacing: 8) {
-                ForEach(viewModel.tasks) { task in
-                    TaskRowView(task: task, viewModel: viewModel)
-                }
+        List {
+            ForEach(viewModel.tasks) { task in
+                TaskRowView(task: task, viewModel: viewModel)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .onMove(perform: viewModel.moveTask)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 }
 

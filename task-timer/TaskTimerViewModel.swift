@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
 class TaskTimerViewModel: ObservableObject {
     // MARK: - Published Properties
@@ -168,14 +169,19 @@ class TaskTimerViewModel: ObservableObject {
         estimatedDuration: Int? = nil,
         tags: [String] = []
     ) {
+        // 计算新任务的排序顺序：未完成任务的最大顺序 + 1
+        let maxIncompleteSortOrder = tasks.filter { !$0.isCompleted }.map { $0.sortOrder }.max() ?? -1
+        
         let task = Task(
             title: title,
             taskDescription: description,
             priority: priority,
             tags: tags,
-            estimatedDuration: estimatedDuration
+            estimatedDuration: estimatedDuration,
+            sortOrder: maxIncompleteSortOrder + 1
         )
         tasks.insert(task, at: 0)
+        reorderTasks()
         saveTasks()
     }
     
@@ -184,6 +190,18 @@ class TaskTimerViewModel: ObservableObject {
             tasks[index].isCompleted.toggle()
             tasks[index].status = tasks[index].isCompleted ? .completed : .todo
             tasks[index].completedAt = tasks[index].isCompleted ? Date() : nil
+            
+            // 如果任务完成，将其移到已完成任务的末尾
+            if tasks[index].isCompleted {
+                let maxCompletedSortOrder = tasks.filter { $0.isCompleted }.map { $0.sortOrder }.max() ?? tasks.filter { !$0.isCompleted }.map { $0.sortOrder }.max() ?? 0
+                tasks[index].sortOrder = maxCompletedSortOrder + 1
+            } else {
+                // 如果取消完成，将其移到未完成任务的末尾
+                let maxIncompleteSortOrder = tasks.filter { !$0.isCompleted && $0.id != task.id }.map { $0.sortOrder }.max() ?? -1
+                tasks[index].sortOrder = maxIncompleteSortOrder + 1
+            }
+            
+            reorderTasks()
             saveTasks()
         }
     }
@@ -200,6 +218,48 @@ class TaskTimerViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Task Reordering
+    func moveTask(from source: IndexSet, to destination: Int) {
+        // 创建临时数组用于移动
+        var reorderedTasks = tasks
+        reorderedTasks.move(fromOffsets: source, toOffset: destination)
+        
+        // 检查移动后的任务是否跨越了完成/未完成的边界
+        guard let sourceIndex = source.first else { return }
+        let movedTask = tasks[sourceIndex]
+        
+        // 确定目标位置的任务状态
+        let destinationIndex = destination > sourceIndex ? destination - 1 : destination
+        
+        // 如果目标位置有任务，检查是否跨越边界
+        if destinationIndex < reorderedTasks.count {
+            let destinationTask = reorderedTasks[destinationIndex]
+            
+            // 不允许将未完成的任务拖到已完成任务之后
+            // 也不允许将已完成的任务拖到未完成任务之前
+            if movedTask.isCompleted != destinationTask.isCompleted {
+                return
+            }
+        }
+        
+        // 更新任务数组
+        tasks = reorderedTasks
+        
+        // 重新分配 sortOrder
+        for (index, _) in tasks.enumerated() {
+            tasks[index].sortOrder = index
+        }
+        
+        saveTasks()
+    }
+    
+    // 重新排序任务：未完成在前，已完成在后，各自按 sortOrder 排序
+    private func reorderTasks() {
+        let incompleteTasks = tasks.filter { !$0.isCompleted }.sorted { $0.sortOrder < $1.sortOrder }
+        let completedTasks = tasks.filter { $0.isCompleted }.sorted { $0.sortOrder < $1.sortOrder }
+        tasks = incompleteTasks + completedTasks
+    }
+    
     // MARK: - Data Persistence
     private func saveTasks() {
         if let encoded = try? JSONEncoder().encode(tasks) {
@@ -211,6 +271,7 @@ class TaskTimerViewModel: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: tasksKey),
            let decoded = try? JSONDecoder().decode([Task].self, from: data) {
             tasks = decoded
+            reorderTasks()
         }
     }
     
@@ -259,21 +320,24 @@ class TaskTimerViewModel: ObservableObject {
                 taskDescription: "整理 Task Timer 的详细需求",
                 priority: .high,
                 tags: ["工作", "文档"],
-                estimatedDuration: 120
+                estimatedDuration: 120,
+                sortOrder: 0
             ),
             Task(
                 title: "回复邮件",
                 taskDescription: "处理今天收到的重要邮件",
                 priority: .medium,
                 tags: ["沟通"],
-                estimatedDuration: 30
+                estimatedDuration: 30,
+                sortOrder: 1
             ),
             Task(
                 title: "学习 SwiftUI",
                 taskDescription: "深入学习 SwiftUI 窗口管理",
                 priority: .low,
                 tags: ["学习", "技术"],
-                estimatedDuration: 60
+                estimatedDuration: 60,
+                sortOrder: 2
             )
         ]
         

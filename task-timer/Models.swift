@@ -35,6 +35,7 @@ struct Task: Identifiable, Codable {
     var actualDuration: Int? // 实际花费时间
     var createdAt: Date
     var completedAt: Date?
+    var sortOrder: Int // 排序顺序
     
     init(
         id: UUID = UUID(),
@@ -47,7 +48,8 @@ struct Task: Identifiable, Codable {
         estimatedDuration: Int? = nil,
         actualDuration: Int? = nil,
         createdAt: Date = Date(),
-        completedAt: Date? = nil
+        completedAt: Date? = nil,
+        sortOrder: Int = 0
     ) {
         self.id = id
         self.title = title
@@ -60,6 +62,7 @@ struct Task: Identifiable, Codable {
         self.actualDuration = actualDuration
         self.createdAt = createdAt
         self.completedAt = completedAt
+        self.sortOrder = sortOrder
     }
 }
 
