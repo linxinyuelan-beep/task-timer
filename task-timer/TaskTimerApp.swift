@@ -169,8 +169,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewModeMenuItem.submenu = viewModeMenu
         menu.addItem(viewModeMenuItem)
         
-        menu.addItem(NSMenuItem.separator())
-        
         // 窗口行为
         let windowBehaviorMenu = NSMenu()
         let windowMovableItem = NSMenuItem(
@@ -210,8 +208,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         themeMenuItem.submenu = themeMenu
         menu.addItem(themeMenuItem)
         
-        menu.addItem(NSMenuItem.separator())
-        
         // 不透明度调节
         let opacityMenu = NSMenu()
         
@@ -241,8 +237,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let settingsItem = NSMenuItem(title: "设置...", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
-        
-        menu.addItem(NSMenuItem.separator())
         
         // 关于
         let aboutItem = NSMenuItem(title: "关于 Task Timer", action: #selector(showAbout), keyEquivalent: "")
