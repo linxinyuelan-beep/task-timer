@@ -141,7 +141,8 @@ class FloatingWindow {
         guard let window = window else { return }
         window.isMovable = isMovable
         window.isMovableByWindowBackground = isMovable
-        
+        // 新增：不可拖拽时允许鼠标穿透
+        window.ignoresMouseEvents = !isMovable
         // 确保窗口样式与当前模式一致
         // 避免在切换模式时出现样式不一致的问题
         let isCompact = viewModel.settings.isCompactMode
