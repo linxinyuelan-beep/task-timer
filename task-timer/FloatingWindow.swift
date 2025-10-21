@@ -54,10 +54,10 @@ class FloatingWindow {
             .fullScreenAuxiliary    // 全屏辅助窗口（覆盖全屏应用）
         ]
         
-        // 透明度和外观
+        // 透明度和外观（注意：不要使用 .clear 背景，否则标题栏不可见）
         window.isOpaque = false
-        window.backgroundColor = .clear
-        window.alphaValue = 0.95
+        window.alphaValue = viewModel.settings.opacity
+        window.hasShadow = true
         
         // 窗口可移动设置
         window.isMovable = viewModel.settings.isWindowMovable
@@ -120,42 +120,93 @@ class FloatingWindow {
         guard let window = window else { return }
         window.isMovable = isMovable
         window.isMovableByWindowBackground = isMovable
+        
+        // 确保窗口样式与当前模式一致
+        // 避免在切换模式时出现样式不一致的问题
+        let isCompact = viewModel.settings.isCompactMode
+        if !isCompact {
+            // 如果是普通模式，确保有标题栏
+            if !window.styleMask.contains(.titled) {
+                window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+                window.hasShadow = true
+                window.title = "Task Timer"
+            }
+        }
     }
     
     private func updateWindowStyle(isCompact: Bool) {
-        guard let window = window else { return }
+        guard let currentWindow = window else { return }
+        
+        // 保存当前窗口位置和状态
+        let currentFrame = currentWindow.frame
+        let isVisible = currentWindow.isVisible
         
         if isCompact {
             // 轻量化模式：无标题栏、完全透明背景、更小尺寸
-            window.styleMask = [.borderless, .resizable]
-            window.backgroundColor = .clear
-            window.alphaValue = viewModel.settings.opacity
-            window.isOpaque = false
-            window.hasShadow = false
+            currentWindow.styleMask = [.borderless, .resizable]
+            currentWindow.backgroundColor = .clear
+            currentWindow.alphaValue = viewModel.settings.opacity
+            currentWindow.isOpaque = false
+            currentWindow.hasShadow = false
             
             // 调整窗口大小
             let newSize = NSSize(width: 280, height: 200)
-            let currentOrigin = window.frame.origin
-            window.setFrame(
-                NSRect(origin: currentOrigin, size: newSize),
+            currentWindow.setFrame(
+                NSRect(origin: currentFrame.origin, size: newSize),
                 display: true,
                 animate: true
             )
         } else {
-            // 正常模式：有标题栏
-            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-            window.alphaValue = viewModel.settings.opacity
-            window.hasShadow = true
-            window.title = "Task Timer"
+            // 正常模式：重新创建窗口以确保标题栏正确显示
+            // 这是处理 macOS 窗口样式切换的最可靠方法
             
-            // 恢复窗口大小
-            let newSize = NSSize(width: 350, height: 500)
-            let currentOrigin = window.frame.origin
-            window.setFrame(
-                NSRect(origin: currentOrigin, size: newSize),
-                display: true,
-                animate: true
+            // 创建新窗口
+            let contentView = RootView()
+                .environmentObject(viewModel)
+            
+            let newWindow = NSWindow(
+                contentRect: NSRect(x: currentFrame.origin.x, y: currentFrame.origin.y, width: 350, height: 500),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                backing: .buffered,
+                defer: false
             )
+            
+            // 应用窗口设置（关键：不要设置 backgroundColor 为 .clear，这会导致标题栏不可见）
+            newWindow.title = "Task Timer"
+            newWindow.contentView = NSHostingView(rootView: contentView)
+            newWindow.isReleasedWhenClosed = false
+            newWindow.level = .floating
+            newWindow.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
+            
+            // 关键修复：正常模式下不设置 isOpaque 为 false，保持默认值以确保标题栏可见
+            // newWindow.isOpaque = false  // 注释掉这行
+            newWindow.backgroundColor = nil  // 使用默认背景，确保标题栏可见
+            newWindow.alphaValue = viewModel.settings.opacity
+            newWindow.hasShadow = true
+            newWindow.isMovable = viewModel.settings.isWindowMovable
+            newWindow.isMovableByWindowBackground = viewModel.settings.isWindowMovable
+            
+            // 应用主题
+            switch viewModel.settings.theme {
+            case .light:
+                newWindow.appearance = NSAppearance(named: .aqua)
+            case .dark:
+                newWindow.appearance = NSAppearance(named: .darkAqua)
+            case .system:
+                newWindow.appearance = nil
+            }
+            
+            // 关闭旧窗口
+            currentWindow.orderOut(nil)
+            
+            // 替换为新窗口
+            self.window = newWindow
+            
+            // 显示新窗口
+            if isVisible {
+                newWindow.makeKeyAndOrderFront(nil)
+                newWindow.orderFrontRegardless()
+            }
         }
     }
     

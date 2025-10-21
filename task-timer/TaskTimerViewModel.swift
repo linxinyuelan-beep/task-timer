@@ -23,6 +23,7 @@ class TaskTimerViewModel: ObservableObject {
     private var clockCancellable: AnyCancellable?
     private var timerSeconds: Int = 0
     private var timerTargetSeconds: Int = 25 * 60 // 默认 25 分钟
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Storage
     private let tasksKey = "savedTasks"
@@ -33,11 +34,29 @@ class TaskTimerViewModel: ObservableObject {
         loadTasks()
         loadSettings()
         setupClock()
+        setupCompactModeObserver()
         
         // 添加示例任务（首次运行）
         if tasks.isEmpty {
             addSampleTasks()
         }
+    }
+    
+    // MARK: - Observers
+    private func setupCompactModeObserver() {
+        // 监听轻量化模式变化，自动调整窗口可拖拽状态
+        $settings
+            .map { $0.isCompactMode }
+            .removeDuplicates()
+            .sink { [weak self] isCompact in
+                guard let self = self else { return }
+                // 非轻量化模式下自动启用窗口可拖拽
+                if !isCompact {
+                    self.settings.isWindowMovable = true
+                    self.saveSettings()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Clock
@@ -112,6 +131,32 @@ class TaskTimerViewModel: ObservableObject {
     func resetTimer() {
         stopTimer()
         timerSeconds = 0
+        updateTimerDisplay()
+    }
+    
+    func restartTimer() {
+        stopTimer()
+        timerSeconds = 0
+        updateTimerDisplay()
+        startTimer()
+    }
+    
+    func setTimerDuration(minutes: Int) {
+        let wasRunning = isTimerRunning
+        stopTimer()
+        timerTargetSeconds = minutes * 60
+        timerSeconds = 0
+        updateTimerDisplay()
+        if wasRunning {
+            startTimer()
+        }
+    }
+    
+    func stopPomodoroMode() {
+        stopTimer()
+        pomodoroMode = false
+        timerSeconds = 0
+        timerTargetSeconds = 25 * 60
         updateTimerDisplay()
     }
     

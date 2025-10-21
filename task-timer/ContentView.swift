@@ -51,20 +51,68 @@ struct ContentView: View {
     
     // MARK: - Timer Section
     private var timerSection: some View {
-        HStack {
-            Image(systemName: "timer")
-                .foregroundColor(.orange)
-            
-            Text(viewModel.pomodoroMode ? "🍅 专注模式: \(viewModel.timerDisplay)" : "计时器")
-                .font(.system(size: 16, weight: .medium))
-            
-            Spacer()
-            
-            Button(action: viewModel.toggleTimer) {
-                Image(systemName: viewModel.isTimerRunning ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.title2)
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "timer")
+                    .foregroundColor(.orange)
+                
+                Text(viewModel.pomodoroMode ? "🍅 专注模式: \(viewModel.timerDisplay)" : "计时器")
+                    .font(.system(size: 16, weight: .medium))
+                
+                Spacer()
+                
+                // 终止按钮
+                Button(action: viewModel.stopPomodoroMode) {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                .help("终止专注模式")
+                .disabled(!viewModel.pomodoroMode)
+                
+                // 重新开始按钮
+                Button(action: viewModel.restartTimer) {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+                .help("重新开始")
+                .disabled(!viewModel.pomodoroMode)
+                
+                // 开始/暂停按钮
+                Button(action: viewModel.toggleTimer) {
+                    Image(systemName: viewModel.isTimerRunning ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.title2)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            
+            // 快速时长选择按钮
+            if viewModel.pomodoroMode {
+                HStack(spacing: 8) {
+                    Text("快速设置:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    ForEach([5, 10, 25, 30], id: \.self) { duration in
+                        Button(action: {
+                            viewModel.setTimerDuration(minutes: duration)
+                        }) {
+                            Text("\(duration)分")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.2))
+                                .cornerRadius(4)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    Spacer()
+                }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -124,6 +172,7 @@ struct ContentView: View {
 struct TaskRowView: View {
     let task: Task
     @ObservedObject var viewModel: TaskTimerViewModel
+    @State private var showingEditTask = false
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -181,11 +230,14 @@ struct TaskRowView: View {
         .cornerRadius(8)
         .contextMenu {
             Button("编辑") {
-                // TODO: 编辑任务
+                showingEditTask = true
             }
             Button("删除", role: .destructive) {
                 viewModel.deleteTask(task)
             }
+        }
+        .popover(isPresented: $showingEditTask) {
+            EditTaskView(isPresented: $showingEditTask, task: task, viewModel: viewModel)
         }
     }
     
@@ -264,6 +316,96 @@ struct AddTaskView: View {
             tags: tagArray
         )
         
+        isPresented = false
+    }
+}
+
+// MARK: - Edit Task View
+struct EditTaskView: View {
+    @Binding var isPresented: Bool
+    let task: Task
+    @ObservedObject var viewModel: TaskTimerViewModel
+    
+    @State private var title: String
+    @State private var description: String
+    @State private var priority: TaskPriority
+    @State private var estimatedDuration: String
+    @State private var tags: String
+    
+    init(isPresented: Binding<Bool>, task: Task, viewModel: TaskTimerViewModel) {
+        self._isPresented = isPresented
+        self.task = task
+        self.viewModel = viewModel
+        
+        // 初始化状态值
+        self._title = State(initialValue: task.title)
+        self._description = State(initialValue: task.taskDescription ?? "")
+        self._priority = State(initialValue: task.priority)
+        self._estimatedDuration = State(initialValue: task.estimatedDuration.map { String($0) } ?? "")
+        self._tags = State(initialValue: task.tags.joined(separator: ", "))
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("编辑任务")
+                .font(.headline)
+            
+            TextField("任务标题", text: $title)
+                .textFieldStyle(.roundedBorder)
+            
+            TextField("任务描述（可选）", text: $description)
+                .textFieldStyle(.roundedBorder)
+            
+            Picker("优先级", selection: $priority) {
+                Text("高").tag(TaskPriority.high)
+                Text("中").tag(TaskPriority.medium)
+                Text("低").tag(TaskPriority.low)
+            }
+            .pickerStyle(.segmented)
+            
+            TextField("预计时长（分钟）", text: $estimatedDuration)
+                .textFieldStyle(.roundedBorder)
+            
+            TextField("标签（逗号分隔）", text: $tags)
+                .textFieldStyle(.roundedBorder)
+            
+            HStack {
+                Button("取消") {
+                    isPresented = false
+                }
+                .keyboardShortcut(.cancelAction)
+                
+                Spacer()
+                
+                Button("保存") {
+                    saveTask()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(title.isEmpty)
+            }
+        }
+        .padding()
+        .frame(width: 300)
+    }
+    
+    private func saveTask() {
+        // 找到要更新的任务
+        guard let index = viewModel.tasks.firstIndex(where: { $0.id == task.id }) else {
+            return
+        }
+        
+        let duration = Int(estimatedDuration)
+        let tagArray = tags.split(separator: ",").map { String($0.trimmingCharacters(in: .whitespaces)) }.filter { !$0.isEmpty }
+        
+        // 创建更新后的任务
+        var updatedTask = viewModel.tasks[index]
+        updatedTask.title = title
+        updatedTask.taskDescription = description.isEmpty ? nil : description
+        updatedTask.priority = priority
+        updatedTask.estimatedDuration = duration
+        updatedTask.tags = tagArray
+        
+        viewModel.updateTask(updatedTask)
         isPresented = false
     }
 }

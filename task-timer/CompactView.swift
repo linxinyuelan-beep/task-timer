@@ -23,6 +23,24 @@ struct CompactView: View {
                 .foregroundColor(themeColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
+            // 专注倒计时显示（如果正在运行）
+            if viewModel.pomodoroMode {
+                HStack(spacing: 6) {
+                    Image(systemName: viewModel.isTimerRunning ? "timer" : "timer.circle")
+                        .foregroundColor(viewModel.isTimerRunning ? .orange : themeColor.opacity(0.7))
+                        .font(.system(size: viewModel.settings.compactTaskFontSize))
+                    
+                    Text(viewModel.timerDisplay)
+                        .font(.system(size: viewModel.settings.compactTaskFontSize * 1.2, weight: .semibold, design: .monospaced))
+                        .foregroundColor(viewModel.isTimerRunning ? .orange : themeColor.opacity(0.7))
+                    
+                    Text(viewModel.isTimerRunning ? "专注中" : "已暂停")
+                        .font(.system(size: viewModel.settings.compactTaskFontSize * 0.75))
+                        .foregroundColor(viewModel.isTimerRunning ? .orange.opacity(0.8) : themeColor.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
             // 第一个未完成任务
             if let task = viewModel.firstIncompleteTask {
                 Text(task.title)
