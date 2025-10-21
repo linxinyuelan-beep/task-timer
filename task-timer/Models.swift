@@ -83,6 +83,11 @@ struct UserSettings: Codable {
     var isCompactMode: Bool // 轻量化模式
     var isWindowMovable: Bool // 窗口是否可移动
     
+    // 轻量化模式字体设置
+    var compactTimeFontSize: Double // 时间字体大小
+    var compactTaskFontSize: Double // 任务字体大小
+    var compactColorHex: String // 主题颜色（十六进制）
+    
     init(
         theme: Theme = .system,
         opacity: Double = 0.95,
@@ -93,7 +98,10 @@ struct UserSettings: Codable {
         pomodoroLongBreak: Int = 15,
         notificationSound: Bool = true,
         isCompactMode: Bool = false,
-        isWindowMovable: Bool = true
+        isWindowMovable: Bool = true,
+        compactTimeFontSize: Double = 48,
+        compactTaskFontSize: Double = 16,
+        compactColorHex: String = "086FB2"
     ) {
         self.theme = theme
         self.opacity = opacity
@@ -105,6 +113,9 @@ struct UserSettings: Codable {
         self.notificationSound = notificationSound
         self.isCompactMode = isCompactMode
         self.isWindowMovable = isWindowMovable
+        self.compactTimeFontSize = compactTimeFontSize
+        self.compactTaskFontSize = compactTaskFontSize
+        self.compactColorHex = compactColorHex
     }
 }
 

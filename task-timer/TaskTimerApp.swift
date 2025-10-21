@@ -22,6 +22,7 @@ struct TaskTimerApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var floatingWindow: FloatingWindow?
     var statusBarItem: NSStatusItem?
+    var settingsWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 隐藏 Dock 图标（可选）
@@ -222,13 +223,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func openSettings() {
-        // TODO: 打开设置窗口
-        let alert = NSAlert()
-        alert.messageText = "设置"
-        alert.informativeText = "设置功能正在开发中..."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "确定")
-        alert.runModal()
+        // 如果设置窗口已经存在且可见，则激活它
+        if let settingsWindow = settingsWindow, settingsWindow.isVisible {
+            settingsWindow.makeKeyAndOrderFront(nil)
+            return
+        }
+        
+        // 创建设置视图
+        guard let viewModel = floatingWindow?.viewModel else { return }
+        
+        // 创建一个包装视图来处理窗口关闭
+        let settingsWrapper = SettingsWindowWrapper(
+            viewModel: viewModel,
+            onClose: { [weak self] in
+                self?.settingsWindow?.close()
+                self?.settingsWindow = nil
+            }
+        )
+        
+        // 创建设置窗口
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 600),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = "设置"
+        window.contentView = NSHostingView(rootView: settingsWrapper)
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.level = .floating
+        
+        self.settingsWindow = window
+        window.makeKeyAndOrderFront(nil)
     }
     
     @objc private func showAbout() {
@@ -257,5 +285,21 @@ extension AppDelegate: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         // 菜单打开前更新状态
         statusBarItem?.menu = createMenu()
+    }
+}
+
+// MARK: - Settings Window Wrapper
+struct SettingsWindowWrapper: View {
+    @ObservedObject var viewModel: TaskTimerViewModel
+    @State private var isPresented = true
+    let onClose: () -> Void
+    
+    var body: some View {
+        SettingsView(isPresented: $isPresented, viewModel: viewModel)
+            .onChange(of: isPresented) { oldValue, newValue in
+                if !newValue {
+                    onClose()
+                }
+            }
     }
 }

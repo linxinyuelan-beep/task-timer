@@ -11,6 +11,7 @@ struct ContentView: View {
     @EnvironmentObject var viewModel: TaskTimerViewModel
     @State private var newTaskTitle = ""
     @State private var showingAddTask = false
+    @State private var showingSettings = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -93,10 +94,13 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             
-            Button(action: {}) {
+            Button(action: { showingSettings = true }) {
                 Image(systemName: "gearshape.fill")
             }
             .buttonStyle(.plain)
+            .popover(isPresented: $showingSettings) {
+                SettingsView(isPresented: $showingSettings, viewModel: viewModel)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
