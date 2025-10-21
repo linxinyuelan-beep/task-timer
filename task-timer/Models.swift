@@ -81,6 +81,7 @@ struct UserSettings: Codable {
     var pomodoroLongBreak: Int
     var notificationSound: Bool
     var isCompactMode: Bool // 轻量化模式
+    var isWindowMovable: Bool // 窗口是否可移动
     
     init(
         theme: Theme = .system,
@@ -91,7 +92,8 @@ struct UserSettings: Codable {
         pomodoroShortBreak: Int = 5,
         pomodoroLongBreak: Int = 15,
         notificationSound: Bool = true,
-        isCompactMode: Bool = false
+        isCompactMode: Bool = false,
+        isWindowMovable: Bool = true
     ) {
         self.theme = theme
         self.opacity = opacity
@@ -102,6 +104,7 @@ struct UserSettings: Codable {
         self.pomodoroLongBreak = pomodoroLongBreak
         self.notificationSound = notificationSound
         self.isCompactMode = isCompactMode
+        self.isWindowMovable = isWindowMovable
     }
 }
 

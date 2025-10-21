@@ -11,12 +11,19 @@ import Combine
 
 class FloatingWindow {
     private var window: NSWindow?
-    private let viewModel = TaskTimerViewModel()
+    let viewModel = TaskTimerViewModel()
     private var cancellables = Set<AnyCancellable>()
+    
+    // 窗口是否可见
+    var isVisible: Bool {
+        return window?.isVisible ?? false
+    }
     
     init() {
         setupWindow()
         observeCompactMode()
+        observeTheme()
+        observeWindowMovable()
     }
     
     private func setupWindow() {
@@ -52,6 +59,10 @@ class FloatingWindow {
         window.backgroundColor = .clear
         window.alphaValue = 0.95
         
+        // 窗口可移动设置
+        window.isMovable = viewModel.settings.isWindowMovable
+        window.isMovableByWindowBackground = viewModel.settings.isWindowMovable
+        
         // 窗口位置
         window.center()
         
@@ -70,6 +81,47 @@ class FloatingWindow {
             .store(in: &cancellables)
     }
     
+    private func observeTheme() {
+        // 监听主题变化
+        viewModel.$settings
+            .map { $0.theme }
+            .removeDuplicates()
+            .sink { [weak self] theme in
+                self?.updateAppearance(theme: theme)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func observeWindowMovable() {
+        // 监听窗口可移动状态变化
+        viewModel.$settings
+            .map { $0.isWindowMovable }
+            .removeDuplicates()
+            .sink { [weak self] isMovable in
+                self?.updateWindowMovable(isMovable: isMovable)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateAppearance(theme: Theme) {
+        guard let window = window else { return }
+        
+        switch theme {
+        case .light:
+            window.appearance = NSAppearance(named: .aqua)
+        case .dark:
+            window.appearance = NSAppearance(named: .darkAqua)
+        case .system:
+            window.appearance = nil // 跟随系统
+        }
+    }
+    
+    private func updateWindowMovable(isMovable: Bool) {
+        guard let window = window else { return }
+        window.isMovable = isMovable
+        window.isMovableByWindowBackground = isMovable
+    }
+    
     private func updateWindowStyle(isCompact: Bool) {
         guard let window = window else { return }
         
@@ -77,7 +129,7 @@ class FloatingWindow {
             // 轻量化模式：无标题栏、完全透明背景、更小尺寸
             window.styleMask = [.borderless, .resizable]
             window.backgroundColor = .clear
-            window.alphaValue = 1.0
+            window.alphaValue = viewModel.settings.opacity
             window.isOpaque = false
             window.hasShadow = false
             
@@ -92,7 +144,7 @@ class FloatingWindow {
         } else {
             // 正常模式：有标题栏
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-            window.alphaValue = 0.95
+            window.alphaValue = viewModel.settings.opacity
             window.hasShadow = true
             window.title = "Task Timer"
             
@@ -132,6 +184,13 @@ class FloatingWindow {
         } else {
             showWindow()
         }
+    }
+    
+    func setOpacity(_ opacity: Double) {
+        guard let window = window else { return }
+        window.alphaValue = opacity
+        viewModel.settings.opacity = opacity
+        viewModel.saveSettings()
     }
 }
 

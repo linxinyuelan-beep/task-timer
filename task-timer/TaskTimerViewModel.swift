@@ -169,12 +169,6 @@ class TaskTimerViewModel: ObservableObject {
         }
     }
     
-    private func saveSettings() {
-        if let encoded = try? JSONEncoder().encode(settings) {
-            UserDefaults.standard.set(encoded, forKey: settingsKey)
-        }
-    }
-    
     private func loadSettings() {
         if let data = UserDefaults.standard.data(forKey: settingsKey),
            let decoded = try? JSONDecoder().decode(UserSettings.self, from: data) {
@@ -186,6 +180,25 @@ class TaskTimerViewModel: ObservableObject {
     func toggleCompactMode() {
         settings.isCompactMode.toggle()
         saveSettings()
+    }
+    
+    // MARK: - Window Movable
+    func toggleWindowMovable() {
+        settings.isWindowMovable.toggle()
+        saveSettings()
+    }
+    
+    // MARK: - Theme
+    func setTheme(_ theme: Theme) {
+        settings.theme = theme
+        saveSettings()
+    }
+    
+    // 公开 saveSettings 方法
+    func saveSettings() {
+        if let encoded = try? JSONEncoder().encode(settings) {
+            UserDefaults.standard.set(encoded, forKey: settingsKey)
+        }
     }
     
     // 获取第一个未完成的任务
