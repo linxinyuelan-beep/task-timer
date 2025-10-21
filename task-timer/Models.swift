@@ -80,6 +80,7 @@ struct UserSettings: Codable {
     var pomodoroShortBreak: Int
     var pomodoroLongBreak: Int
     var notificationSound: Bool
+    var isCompactMode: Bool // 轻量化模式
     
     init(
         theme: Theme = .system,
@@ -89,7 +90,8 @@ struct UserSettings: Codable {
         pomodoroWorkDuration: Int = 25,
         pomodoroShortBreak: Int = 5,
         pomodoroLongBreak: Int = 15,
-        notificationSound: Bool = true
+        notificationSound: Bool = true,
+        isCompactMode: Bool = false
     ) {
         self.theme = theme
         self.opacity = opacity
@@ -99,6 +101,7 @@ struct UserSettings: Codable {
         self.pomodoroShortBreak = pomodoroShortBreak
         self.pomodoroLongBreak = pomodoroLongBreak
         self.notificationSound = notificationSound
+        self.isCompactMode = isCompactMode
     }
 }
 

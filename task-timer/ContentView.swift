@@ -82,6 +82,12 @@ struct ContentView: View {
             
             Spacer()
             
+            Button(action: viewModel.toggleCompactMode) {
+                Image(systemName: "rectangle.compress.vertical")
+            }
+            .buttonStyle(.plain)
+            .help("轻量化模式")
+            
             Button(action: {}) {
                 Image(systemName: "magnifyingglass")
             }

@@ -182,6 +182,17 @@ class TaskTimerViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Compact Mode
+    func toggleCompactMode() {
+        settings.isCompactMode.toggle()
+        saveSettings()
+    }
+    
+    // 获取第一个未完成的任务
+    var firstIncompleteTask: Task? {
+        tasks.first { !$0.isCompleted }
+    }
+    
     // MARK: - Sample Data
     private func addSampleTasks() {
         let sampleTasks = [

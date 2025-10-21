@@ -7,18 +7,21 @@
 
 import SwiftUI
 import AppKit
+import Combine
 
 class FloatingWindow {
     private var window: NSWindow?
     private let viewModel = TaskTimerViewModel()
+    private var cancellables = Set<AnyCancellable>()
     
     init() {
         setupWindow()
+        observeCompactMode()
     }
     
     private func setupWindow() {
         // 创建内容视图
-        let contentView = ContentView()
+        let contentView = RootView()
             .environmentObject(viewModel)
         
         // 创建窗口
@@ -56,6 +59,54 @@ class FloatingWindow {
         setupWindowObserver()
     }
     
+    private func observeCompactMode() {
+        // 监听轻量化模式变化
+        viewModel.$settings
+            .map { $0.isCompactMode }
+            .removeDuplicates()
+            .sink { [weak self] isCompact in
+                self?.updateWindowStyle(isCompact: isCompact)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateWindowStyle(isCompact: Bool) {
+        guard let window = window else { return }
+        
+        if isCompact {
+            // 轻量化模式：无标题栏、完全透明背景、更小尺寸
+            window.styleMask = [.borderless, .resizable]
+            window.backgroundColor = .clear
+            window.alphaValue = 1.0
+            window.isOpaque = false
+            window.hasShadow = false
+            
+            // 调整窗口大小
+            let newSize = NSSize(width: 280, height: 200)
+            let currentOrigin = window.frame.origin
+            window.setFrame(
+                NSRect(origin: currentOrigin, size: newSize),
+                display: true,
+                animate: true
+            )
+        } else {
+            // 正常模式：有标题栏
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            window.alphaValue = 0.95
+            window.hasShadow = true
+            window.title = "Task Timer"
+            
+            // 恢复窗口大小
+            let newSize = NSSize(width: 350, height: 500)
+            let currentOrigin = window.frame.origin
+            window.setFrame(
+                NSRect(origin: currentOrigin, size: newSize),
+                display: true,
+                animate: true
+            )
+        }
+    }
+    
     private func setupWindowObserver() {
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
@@ -81,5 +132,23 @@ class FloatingWindow {
         } else {
             showWindow()
         }
+    }
+}
+
+// MARK: - Root View
+struct RootView: View {
+    @EnvironmentObject var viewModel: TaskTimerViewModel
+    
+    var body: some View {
+        Group {
+            if viewModel.settings.isCompactMode {
+                CompactView()
+                    .environmentObject(viewModel)
+            } else {
+                ContentView()
+                    .environmentObject(viewModel)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
