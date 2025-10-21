@@ -10,6 +10,7 @@ import Combine
 import SwiftUI
 
 class TaskTimerViewModel: ObservableObject {
+        static let timerDidCompleteNotification = Notification.Name("TimerDidCompleteNotification")
     // MARK: - Published Properties
     @Published var tasks: [Task] = []
     @Published var currentTime: String = ""
@@ -88,7 +89,7 @@ class TaskTimerViewModel: ObservableObject {
         }
     }
     
-    private func startTimer() {
+    func startTimer() {
         isTimerRunning = true
         pomodoroMode = true
         
@@ -99,7 +100,7 @@ class TaskTimerViewModel: ObservableObject {
             }
     }
     
-    private func stopTimer() {
+    func stopTimer() {
         isTimerRunning = false
         timerCancellable?.cancel()
     }
@@ -123,8 +124,10 @@ class TaskTimerViewModel: ObservableObject {
     }
     
     private func timerCompleted() {
-        // TODO: 发送通知
-        print("计时器完成！")
+        // 发送倒计时完成通知
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: TaskTimerViewModel.timerDidCompleteNotification, object: nil)
+        }
         timerSeconds = 0
         updateTimerDisplay()
     }

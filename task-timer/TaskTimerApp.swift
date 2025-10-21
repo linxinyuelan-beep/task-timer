@@ -60,6 +60,100 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
+        // 倒计时控制
+        let timerControlMenu = NSMenu()
+        
+        if let viewModel = floatingWindow?.viewModel {
+            if viewModel.pomodoroMode {
+                // 番茄钟模式已激活
+                if viewModel.isTimerRunning {
+                    // 计时器正在运行
+                    let pauseItem = NSMenuItem(
+                        title: "暂停倒计时",
+                        action: #selector(pauseTimer),
+                        keyEquivalent: "p"
+                    )
+                    pauseItem.target = self
+                    timerControlMenu.addItem(pauseItem)
+                } else {
+                    // 计时器已暂停
+                    let resumeItem = NSMenuItem(
+                        title: "继续倒计时",
+                        action: #selector(resumeTimer),
+                        keyEquivalent: "p"
+                    )
+                    resumeItem.target = self
+                    timerControlMenu.addItem(resumeItem)
+                }
+                
+                let stopItem = NSMenuItem(
+                    title: "结束倒计时",
+                    action: #selector(endTimer),
+                    keyEquivalent: "e"
+                )
+                stopItem.target = self
+                timerControlMenu.addItem(stopItem)
+            } else {
+                // 计时器未激活时的选项
+                // 快速开始 25 分钟番茄钟
+                let quick25Item = NSMenuItem(
+                    title: "开始 25 分钟番茄钟",
+                    action: #selector(startTimer25),
+                    keyEquivalent: "p"
+                )
+                quick25Item.target = self
+                timerControlMenu.addItem(quick25Item)
+                
+                timerControlMenu.addItem(NSMenuItem.separator())
+                
+                let quickStartMenu = NSMenu()
+            
+            let start5Item = NSMenuItem(title: "5 分钟", action: #selector(startTimer5), keyEquivalent: "")
+            start5Item.target = self
+            quickStartMenu.addItem(start5Item)
+            
+            let start10Item = NSMenuItem(title: "10 分钟", action: #selector(startTimer10), keyEquivalent: "")
+            start10Item.target = self
+            quickStartMenu.addItem(start10Item)
+            
+            let start15Item = NSMenuItem(title: "15 分钟", action: #selector(startTimer15), keyEquivalent: "")
+            start15Item.target = self
+            quickStartMenu.addItem(start15Item)
+            
+            let start25Item = NSMenuItem(title: "25 分钟", action: #selector(startTimer25), keyEquivalent: "")
+            start25Item.target = self
+            quickStartMenu.addItem(start25Item)
+            
+            let start30Item = NSMenuItem(title: "30 分钟", action: #selector(startTimer30), keyEquivalent: "")
+            start30Item.target = self
+            quickStartMenu.addItem(start30Item)
+            
+            let start45Item = NSMenuItem(title: "45 分钟", action: #selector(startTimer45), keyEquivalent: "")
+            start45Item.target = self
+            quickStartMenu.addItem(start45Item)
+            
+            let start60Item = NSMenuItem(title: "60 分钟", action: #selector(startTimer60), keyEquivalent: "")
+            start60Item.target = self
+            quickStartMenu.addItem(start60Item)
+            
+            quickStartMenu.addItem(NSMenuItem.separator())
+            
+            let customItem = NSMenuItem(title: "自定义时间...", action: #selector(startCustomTimer), keyEquivalent: "")
+            customItem.target = self
+            quickStartMenu.addItem(customItem)
+            
+            let quickStartMenuItem = NSMenuItem(title: "快速开始倒计时", action: nil, keyEquivalent: "")
+            quickStartMenuItem.submenu = quickStartMenu
+            timerControlMenu.addItem(quickStartMenuItem)
+            }
+        }
+        
+        let timerControlMenuItem = NSMenuItem(title: "倒计时", action: nil, keyEquivalent: "")
+        timerControlMenuItem.submenu = timerControlMenu
+        menu.addItem(timerControlMenuItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
         // 视图模式
         let viewModeMenu = NSMenu()
         let compactModeItem = NSMenuItem(
@@ -176,6 +270,85 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleFloatingWindow() {
         floatingWindow?.toggle()
         // 更新菜单
+        statusBarItem?.menu = createMenu()
+    }
+    
+    // MARK: - Timer Control Methods
+    @objc private func startTimer5() {
+        startTimerWithDuration(5)
+    }
+    
+    @objc private func startTimer10() {
+        startTimerWithDuration(10)
+    }
+    
+    @objc private func startTimer15() {
+        startTimerWithDuration(15)
+    }
+    
+    @objc private func startTimer25() {
+        startTimerWithDuration(25)
+    }
+    
+    @objc private func startTimer30() {
+        startTimerWithDuration(30)
+    }
+    
+    @objc private func startTimer45() {
+        startTimerWithDuration(45)
+    }
+    
+    @objc private func startTimer60() {
+        startTimerWithDuration(60)
+    }
+    
+    private func startTimerWithDuration(_ minutes: Int) {
+        floatingWindow?.viewModel.setTimerDuration(minutes: minutes)
+        floatingWindow?.viewModel.toggleTimer()
+        statusBarItem?.menu = createMenu()
+    }
+    
+    @objc private func startCustomTimer() {
+        let alert = NSAlert()
+        alert.messageText = "设置倒计时时间"
+        alert.informativeText = "请输入倒计时时长（分钟）："
+        alert.alertStyle = .informational
+        
+        let inputField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        inputField.placeholderString = "例如：30"
+        inputField.stringValue = "25"
+        alert.accessoryView = inputField
+        
+        alert.addButton(withTitle: "开始")
+        alert.addButton(withTitle: "取消")
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            if let minutes = Int(inputField.stringValue), minutes > 0, minutes <= 999 {
+                startTimerWithDuration(minutes)
+            } else {
+                let errorAlert = NSAlert()
+                errorAlert.messageText = "输入错误"
+                errorAlert.informativeText = "请输入 1-999 之间的有效数字"
+                errorAlert.alertStyle = .warning
+                errorAlert.runModal()
+            }
+        }
+    }
+    
+    @objc private func pauseTimer() {
+        floatingWindow?.viewModel.stopTimer()
+        statusBarItem?.menu = createMenu()
+    }
+    
+    @objc private func resumeTimer() {
+        floatingWindow?.viewModel.startTimer()
+        statusBarItem?.menu = createMenu()
+    }
+    
+    @objc private func endTimer() {
+        floatingWindow?.viewModel.stopPomodoroMode()
         statusBarItem?.menu = createMenu()
     }
     

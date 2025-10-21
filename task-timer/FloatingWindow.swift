@@ -13,6 +13,7 @@ class FloatingWindow {
     private var window: NSWindow?
     let viewModel = TaskTimerViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private var timerCompleteObserver: Any?
     
     // 窗口是否可见
     var isVisible: Bool {
@@ -24,6 +25,26 @@ class FloatingWindow {
         observeCompactMode()
         observeTheme()
         observeWindowMovable()
+
+        // 监听倒计时完成通知，弹窗提醒
+        timerCompleteObserver = NotificationCenter.default.addObserver(forName: TaskTimerViewModel.timerDidCompleteNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.showTimerCompleteAlert()
+        }
+    }
+    
+    deinit {
+        if let observer = timerCompleteObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
+    private func showTimerCompleteAlert() {
+        let alert = NSAlert()
+        alert.messageText = "专注倒计时结束"
+        alert.informativeText = "专注时间已完成，休息一下吧！"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "确定")
+        alert.runModal()
     }
     
     private func setupWindow() {
