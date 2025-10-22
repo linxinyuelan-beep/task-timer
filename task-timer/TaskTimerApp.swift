@@ -23,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var floatingWindow: FloatingWindow?
     var statusBarItem: NSStatusItem?
     var settingsWindow: NSWindow?
+    var taskManagementWindow: NSWindow?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 隐藏 Dock 图标（可选）
@@ -233,6 +234,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
+        // 任务管理
+        let taskManagementItem = NSMenuItem(title: "任务管理...", action: #selector(openTaskManagement), keyEquivalent: "k")
+        taskManagementItem.target = self
+        menu.addItem(taskManagementItem)
+        
         // 设置
         let settingsItem = NSMenuItem(title: "设置...", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
@@ -387,6 +393,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func setOpacity70() {
         floatingWindow?.setOpacity(0.7)
+    }
+    
+    @objc private func openTaskManagement() {
+        // 如果任务管理窗口已经存在且可见，则激活它
+        if let taskManagementWindow = taskManagementWindow, taskManagementWindow.isVisible {
+            taskManagementWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        // 创建任务管理视图
+        guard let viewModel = floatingWindow?.viewModel else { return }
+        
+        let taskManagementView = TaskManagementView(viewModel: viewModel)
+        
+        // 创建任务管理窗口
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 700),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = "任务管理"
+        window.contentView = NSHostingView(rootView: taskManagementView)
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.level = .normal
+        window.minSize = NSSize(width: 500, height: 600)
+        
+        self.taskManagementWindow = window
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     @objc private func openSettings() {
