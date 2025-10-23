@@ -265,6 +265,55 @@ class FloatingWindow {
         viewModel.settings.opacity = opacity
         viewModel.saveSettings()
     }
+    
+    // MARK: - Window Position
+    func moveToTopLeft() {
+        guard let window = window, let screen = NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let padding: CGFloat = 5
+        let newOrigin = NSPoint(
+            x: screenFrame.minX + padding,
+            y: screenFrame.maxY - window.frame.height - padding
+        )
+        window.setFrameOrigin(newOrigin)
+    }
+    
+    func moveToTopRight() {
+        guard let window = window, let screen = NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let padding: CGFloat = 5
+        let newOrigin = NSPoint(
+            x: screenFrame.maxX - window.frame.width - padding,
+            y: screenFrame.maxY - window.frame.height - padding
+        )
+        window.setFrameOrigin(newOrigin)
+    }
+    
+    func moveToBottomLeft() {
+        guard let window = window, let screen = NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let padding: CGFloat = -20
+        let newOrigin = NSPoint(
+            x: screenFrame.minX + padding,
+            y: screenFrame.minY + padding
+        )
+        window.setFrameOrigin(newOrigin)
+    }
+    
+    func moveToBottomRight() {
+        guard let window = window, let screen = NSScreen.main else { return }
+        let screenFrame = screen.frame
+        let newOrigin = NSPoint(
+            x: screenFrame.maxX - window.frame.width + 100,
+            y: screenFrame.minY - 40
+        )
+        window.setFrameOrigin(newOrigin)
+    }
+    
+    func moveToCenter() {
+        guard let window = window else { return }
+        window.center()
+    }
 }
 
 // MARK: - Root View

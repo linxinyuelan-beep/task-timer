@@ -181,6 +181,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowMovableItem.state = (floatingWindow?.viewModel.settings.isWindowMovable ?? true) ? .on : .off
         windowBehaviorMenu.addItem(windowMovableItem)
         
+        windowBehaviorMenu.addItem(NSMenuItem.separator())
+        
+        // 快速移动位置子菜单
+        let quickPositionMenu = NSMenu()
+        
+        let moveToTopLeftItem = NSMenuItem(title: "左上角", action: #selector(moveWindowToTopLeft), keyEquivalent: "")
+        moveToTopLeftItem.target = self
+        quickPositionMenu.addItem(moveToTopLeftItem)
+        
+        let moveToTopRightItem = NSMenuItem(title: "右上角", action: #selector(moveWindowToTopRight), keyEquivalent: "")
+        moveToTopRightItem.target = self
+        quickPositionMenu.addItem(moveToTopRightItem)
+        
+        let moveToBottomLeftItem = NSMenuItem(title: "左下角", action: #selector(moveWindowToBottomLeft), keyEquivalent: "")
+        moveToBottomLeftItem.target = self
+        quickPositionMenu.addItem(moveToBottomLeftItem)
+        
+        let moveToBottomRightItem = NSMenuItem(title: "右下角", action: #selector(moveWindowToBottomRight), keyEquivalent: "")
+        moveToBottomRightItem.target = self
+        quickPositionMenu.addItem(moveToBottomRightItem)
+        
+        quickPositionMenu.addItem(NSMenuItem.separator())
+        
+        let moveToCenterItem = NSMenuItem(title: "居中", action: #selector(moveWindowToCenter), keyEquivalent: "")
+        moveToCenterItem.target = self
+        quickPositionMenu.addItem(moveToCenterItem)
+        
+        let quickPositionMenuItem = NSMenuItem(title: "快速移动位置", action: nil, keyEquivalent: "")
+        quickPositionMenuItem.submenu = quickPositionMenu
+        windowBehaviorMenu.addItem(quickPositionMenuItem)
+        
         let windowBehaviorMenuItem = NSMenuItem(title: "窗口行为", action: nil, keyEquivalent: "")
         windowBehaviorMenuItem.submenu = windowBehaviorMenu
         menu.addItem(windowBehaviorMenuItem)
@@ -483,6 +514,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+    
+    // MARK: - Window Position Methods
+    @objc private func moveWindowToTopLeft() {
+        floatingWindow?.moveToTopLeft()
+    }
+    
+    @objc private func moveWindowToTopRight() {
+        floatingWindow?.moveToTopRight()
+    }
+    
+    @objc private func moveWindowToBottomLeft() {
+        floatingWindow?.moveToBottomLeft()
+    }
+    
+    @objc private func moveWindowToBottomRight() {
+        floatingWindow?.moveToBottomRight()
+    }
+    
+    @objc private func moveWindowToCenter() {
+        floatingWindow?.moveToCenter()
     }
 }
 
